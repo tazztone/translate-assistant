@@ -242,6 +242,14 @@ var TranslateAssistant = GObject.registerClass(
 
         _translateText(fromOrTo, fromText, callback) {
             if (fromText && fromText !== "") {
+                if (this.errorLabel) {
+                    this.errorLabel.text = "";
+                }
+                if (this.translateBtn) {
+                    this.translateBtn.label = _("Translating...");
+                    this.translateBtn.reactive = false;
+                }
+
                 let split_sentences = this._split_sentences ? "1" : "0";
                 let preserve_formatting = this._preserve_formatting ? "1" : "0";
                 let params = {
@@ -264,13 +272,21 @@ var TranslateAssistant = GObject.registerClass(
                         throw new Error(_("Invalid URL"));
                     }
                 } catch (e) {
-                    Main.notify("Translate Assistant", `${_("Error")}: ${e.message}`);
+                    this._showError(`${_("Error")}: ${e.message}`);
+                    if (this.translateBtn) {
+                        this.translateBtn.label = _("Translate");
+                        this.translateBtn.reactive = true;
+                    }
                     return;
                 }
                 
                 message.set_request_body_from_bytes('application/x-www-form-urlencoded', bytes);
                 
                 if (this._destroyed || !this._httpSession) {
+                    if (this.translateBtn) {
+                        this.translateBtn.label = _("Translate");
+                        this.translateBtn.reactive = true;
+                    }
                     return;
                 }
 
@@ -281,6 +297,10 @@ var TranslateAssistant = GObject.registerClass(
                     (session, result) => {
                         if (this._destroyed) {
                             return;
+                        }
+                        if (this.translateBtn) {
+                            this.translateBtn.label = _("Translate");
+                            this.translateBtn.reactive = true;
                         }
                         try {
                             const resBytes = session.send_and_read_finish(result);
@@ -298,17 +318,25 @@ var TranslateAssistant = GObject.registerClass(
                                 }
                                 callback(toText);
                             } else if (message.status_code === 403) {
-                                Main.notify("Translate Assistant", _("Set API Key of DeepL"));
+                                this._showError(_("Set API Key of DeepL"));
                             } else {
-                                Main.notify("Translate Assistant", `Error: ${message.status_code}`);
+                                this._showError(`Error: ${message.status_code}`);
                             }
                         } catch (e) {
                             if (!this._destroyed) {
-                                Main.notify("Translate Assistant", `Error: ${e}`);
+                                this._showError(`Error: ${e.message || e}`);
                             }
                         }
                     }
                 );
+            }
+        }
+
+        _showError(messageText) {
+            if (this.errorLabel) {
+                this.errorLabel.text = messageText;
+            } else {
+                Main.notify("Translate Assistant", messageText);
             }
         }
 
@@ -403,9 +431,12 @@ var TranslateAssistant = GObject.registerClass(
                 style_class: 'translate-actions-row'
             });
             let pasteBtn = new St.Button({
-                label: _("Paste"),
                 style_class: 'translate-action-btn'
             });
+            pasteBtn.set_child(new St.Icon({
+                icon_name: 'edit-paste-symbolic',
+                style_class: 'translate-btn-icon'
+            }));
             pasteBtn.connect('clicked', () => {
                 Clipboard.get_text(CLIPBOARD_TYPE, (_, inText) => {
                     if (inText && inText !== "") {
@@ -417,12 +448,18 @@ var TranslateAssistant = GObject.registerClass(
                 });
             });
             let clearBtn = new St.Button({
-                label: _("Clear"),
                 style_class: 'translate-action-btn'
             });
+            clearBtn.set_child(new St.Icon({
+                icon_name: 'edit-clear-symbolic',
+                style_class: 'translate-btn-icon'
+            }));
             clearBtn.connect('clicked', () => {
                 this.inputEntry.get_clutter_text().set_text("");
                 this.outputEntry.get_clutter_text().set_text("");
+                if (this.errorLabel) {
+                    this.errorLabel.text = "";
+                }
             });
             inputActions.add_child(pasteBtn);
             inputActions.add_child(clearBtn);
@@ -430,20 +467,28 @@ var TranslateAssistant = GObject.registerClass(
             
             container.add_child(inputWrapper);
 
-            // 3. Middle Action Row (Translate Button)
+            // 3. Middle Action Row (Translate Button & Error Label)
             let middleRow = new St.BoxLayout({
-                vertical: false,
+                vertical: true,
                 style_class: 'translate-middle-row',
                 x_align: Clutter.ActorAlign.CENTER
             });
-            let translateBtn = new St.Button({
+            this.translateBtn = new St.Button({
                 label: _("Translate"),
                 style_class: 'translate-submit-btn'
             });
-            translateBtn.connect('clicked', () => {
+            this.translateBtn.connect('clicked', () => {
                 this._triggerTranslation();
             });
-            middleRow.add_child(translateBtn);
+            middleRow.add_child(this.translateBtn);
+
+            this.errorLabel = new St.Label({
+                style_class: 'translate-error-label',
+                text: '',
+                x_align: Clutter.ActorAlign.CENTER
+            });
+            middleRow.add_child(this.errorLabel);
+
             container.add_child(middleRow);
 
             // 4. Output Box
@@ -462,6 +507,7 @@ var TranslateAssistant = GObject.registerClass(
             this.outputEntry.get_clutter_text().set_line_wrap_mode(Pango.WrapMode.WORD_CHAR);
             this.outputEntry.get_clutter_text().set_single_line_mode(false);
             this.outputEntry.get_clutter_text().set_activatable(true);
+            this.outputEntry.get_clutter_text().set_editable(false);
             
             let outputScroll = new St.ScrollView({
                 style_class: 'translate-scroll'
@@ -475,9 +521,12 @@ var TranslateAssistant = GObject.registerClass(
                 style_class: 'translate-actions-row'
             });
             let copyBtn = new St.Button({
-                label: _("Copy"),
                 style_class: 'translate-action-btn'
             });
+            copyBtn.set_child(new St.Icon({
+                icon_name: 'edit-copy-symbolic',
+                style_class: 'translate-btn-icon'
+            }));
             copyBtn.connect('clicked', () => {
                 let outText = this.outputEntry.get_clutter_text().get_text();
                 if (outText && outText !== "") {

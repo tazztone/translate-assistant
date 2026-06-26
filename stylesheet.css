@@ -71,8 +71,7 @@
 }
 
 .translate-action-btn {
-    font-size: 11px;
-    padding: 3px 8px;
+    padding: 4px 6px;
     border-radius: 5px;
     background-color: rgba(255, 255, 255, 0.08);
     color: #eeeeee;
@@ -88,9 +87,14 @@
     background-color: rgba(255, 255, 255, 0.25);
 }
 
+.translate-btn-icon {
+    icon-size: 14px;
+}
+
 /* Middle translate button row */
 .translate-middle-row {
-    margin: 2px 0;
+    margin: 4px 0;
+    spacing: 6px;
 }
 
 .translate-submit-btn {
@@ -110,3 +114,11 @@
 .translate-submit-btn:active {
     background-color: #1051a2;
 }
+
+.translate-error-label {
+    color: #ff7b72; /* Soft warning red */
+    font-size: 11px;
+    margin-top: 4px;
+    text-align: center;
+}
+
