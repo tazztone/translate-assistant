@@ -514,7 +514,10 @@ var TranslateAssistant = GObject.registerClass(
             });
             this.sourceLabel.connect('clicked', () => {
                 const isVisible = !!this.sourceSelector;
-                this._toggleLanguageSelector(true, !isVisible);
+                GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                    this._toggleLanguageSelector(true, !isVisible);
+                    return GLib.SOURCE_REMOVE;
+                });
             });
             this.swapBtn = new St.Button({
                 label: '⇄',
@@ -523,7 +526,10 @@ var TranslateAssistant = GObject.registerClass(
             });
             this.swapBtn.connect('clicked', () => {
                 if (this.sourceSelector || this.targetSelector) {
-                    this._toggleLanguageSelector(true, false);
+                    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                        this._toggleLanguageSelector(true, false);
+                        return GLib.SOURCE_REMOVE;
+                    });
                 }
                 const oldTargetLang = this._target_lang;
                 this._target_lang = this._source_lang;
@@ -544,7 +550,10 @@ var TranslateAssistant = GObject.registerClass(
             });
             this.targetLabel.connect('clicked', () => {
                 const isVisible = !!this.targetSelector;
-                this._toggleLanguageSelector(false, !isVisible);
+                GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                    this._toggleLanguageSelector(false, !isVisible);
+                    return GLib.SOURCE_REMOVE;
+                });
             });
             langRow.add_child(this.sourceLabel);
             langRow.add_child(this.swapBtn);
@@ -737,6 +746,7 @@ var TranslateAssistant = GObject.registerClass(
                 reactive: true,
                 can_focus: true
             });
+            menuItem.activate = () => {};
             menuItem.actor.track_hover = false;
             menuItem.actor.style_class = 'translate-menu-item-container';
             menuItem.add_child(container);
@@ -852,8 +862,11 @@ var TranslateAssistant = GObject.registerClass(
                     
                     btn.connect('clicked', () => {
                         this._settings.set_enum(keyName, index);
-                        this._toggleLanguageSelector(isSource, false);
-                        this._triggerTranslation();
+                        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                            this._toggleLanguageSelector(isSource, false);
+                            this._triggerTranslation();
+                            return GLib.SOURCE_REMOVE;
+                        });
                     });
                     
                     row.add_child(btn);
