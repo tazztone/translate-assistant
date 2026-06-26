@@ -45,6 +45,95 @@ const SHELL_KEYBINDINGS_SCHEMA = "org.gnome.shell.keybindings";
 const SHORTCUT_SETTING_KEY = "keybinding-translate-clipboard";
 const TIMEOUT_MS = 500;
 
+class Tooltip {
+    constructor(actor, text) {
+        this._actor = actor;
+        this._text = text;
+        this._tooltipActor = null;
+        this._timeoutId = null;
+
+        this._hoverId = this._actor.connect('notify::hover', () => {
+            if (this._actor.hover) {
+                this._startTimer();
+            } else {
+                this._cancelTimer();
+                this._hide();
+            }
+        });
+
+        this._destroyId = this._actor.connect('destroy', () => this.destroy());
+    }
+
+    _startTimer() {
+        this._cancelTimer();
+        this._timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, TIMEOUT_MS, () => {
+            this._show();
+            this._timeoutId = null;
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _cancelTimer() {
+        if (this._timeoutId) {
+            GLib.Source.remove(this._timeoutId);
+            this._timeoutId = null;
+        }
+    }
+
+    _show() {
+        this._hide();
+
+        this._tooltipActor = new St.Label({
+            text: typeof this._text === 'function' ? this._text() : this._text,
+            style_class: 'translate-tooltip'
+        });
+
+        Main.uiGroup.add_child(this._tooltipActor);
+
+        let allocationId = this._tooltipActor.connect('notify::allocation', () => {
+            if (!this._tooltipActor) return;
+            this._tooltipActor.disconnect(allocationId);
+
+            let [x, y] = this._actor.get_transformed_position();
+            let width = this._actor.get_width();
+            let height = this._actor.get_height();
+
+            let tooltipWidth = this._tooltipActor.get_width();
+            let tooltipHeight = this._tooltipActor.get_height();
+
+            let tx = x + (width - tooltipWidth) / 2;
+            let ty = y - tooltipHeight - 6;
+
+            if (ty < 0) {
+                ty = y + height + 6;
+            }
+            if (tx < 5) tx = 5;
+
+            this._tooltipActor.set_position(Math.round(tx), Math.round(ty));
+        });
+    }
+
+    _hide() {
+        this._cancelTimer();
+        if (this._tooltipActor) {
+            this._tooltipActor.destroy();
+            this._tooltipActor = null;
+        }
+    }
+
+    destroy() {
+        this._hide();
+        if (this._hoverId) {
+            this._actor.disconnect(this._hoverId);
+            this._hoverId = null;
+        }
+        if (this._destroyId) {
+            this._actor.disconnect(this._destroyId);
+            this._destroyId = null;
+        }
+    }
+}
+
 var TranslateAssistant = GObject.registerClass(
     class TranslateAssistant extends PanelMenu.Button {
         _init(extension) {
@@ -55,6 +144,7 @@ var TranslateAssistant = GObject.registerClass(
             this._destroyed = false;
             this._httpSession = new Soup.Session({ timeout: 10 });
             this._cancellable = null;
+            this._tooltips = [];
 
             this._settingsChangedId = null;
             this._clipboardTimeoutId = null;
@@ -116,6 +206,23 @@ var TranslateAssistant = GObject.registerClass(
             });
 
             this._setupListener();
+
+            this._addTooltip(this.autoPasteSwitch, _("Automatically paste clipboard text when menu opens"));
+            this._addTooltip(this.autoTranslateSwitch, _("Translate input text automatically while typing"));
+            this._addTooltip(this.autoCopySwitch, _("Copy translation results to clipboard automatically"));
+            this._addTooltip(this.settingsMenuItem, _("Open extension preferences"));
+
+            this.menu.connect('open-state-changed', (menu, isOpen) => {
+                if (!isOpen && this._tooltips) {
+                    this._tooltips.forEach(t => t._hide());
+                }
+            });
+        }
+
+        _addTooltip(actor, text) {
+            let t = new Tooltip(actor, text);
+            this._tooltips.push(t);
+            return t;
         }
 
         _setupListener() {
@@ -391,7 +498,8 @@ var TranslateAssistant = GObject.registerClass(
             });
             this.sourceLabel = new St.Label({
                 text: this._source_lang || '',
-                style_class: 'translate-lang-label'
+                style_class: 'translate-lang-label',
+                reactive: true
             });
             this.swapBtn = new St.Button({
                 label: '⇄',
@@ -413,7 +521,8 @@ var TranslateAssistant = GObject.registerClass(
             });
             this.targetLabel = new St.Label({
                 text: this._target_lang || '',
-                style_class: 'translate-lang-label'
+                style_class: 'translate-lang-label',
+                reactive: true
             });
             langRow.add_child(this.sourceLabel);
             langRow.add_child(this.swapBtn);
@@ -584,6 +693,21 @@ var TranslateAssistant = GObject.registerClass(
 
             container.add_child(outputWrapper);
 
+            // Bind tooltips
+            this._addTooltip(this.swapBtn, _("Swap languages"));
+            this._addTooltip(this.pasteBtn, _("Paste from clipboard"));
+            this._addTooltip(this.clearBtn, _("Clear text"));
+            this._addTooltip(this.copyBtn, _("Copy translation to clipboard"));
+            this._addTooltip(this.translateBtn, () => {
+                return this.translateBtn.label === _("Cancel") ? _("Cancel translation") : _("Translate text");
+            });
+            this._addTooltip(this.sourceLabel, () => {
+                return _("Source language: ") + (this.sourceLabel.text || _("Auto"));
+            });
+            this._addTooltip(this.targetLabel, () => {
+                return _("Target language: ") + (this.targetLabel.text || "");
+            });
+
             let menuItem = new PopupMenu.PopupBaseMenuItem({
                 reactive: true,
                 can_focus: true
@@ -643,6 +767,10 @@ var TranslateAssistant = GObject.registerClass(
 
         destroy() {
             this._destroyed = true;
+            if (this._tooltips) {
+                this._tooltips.forEach(t => t.destroy());
+                this._tooltips = null;
+            }
             this._disconnectSettings();
             this._unbindShortcut();
             this._clearClipboardTimeout();

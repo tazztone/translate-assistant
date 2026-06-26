@@ -122,3 +122,16 @@
     text-align: center;
 }
 
+/* Tooltips */
+.translate-tooltip {
+    background-color: #242424;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 5px 9px;
+    color: #e0e0e0;
+    font-size: 11px;
+    font-weight: normal;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
