@@ -196,7 +196,7 @@
 
 /* Floating Window Styles */
 .translate-floating-overlay {
-    background-color: rgba(0, 0, 0, 0.45);
+    background-color: transparent;
 }
 
 .translate-floating-window {
@@ -260,6 +260,14 @@
 .translate-floating-actions {
     spacing: 12px;
     margin-top: 8px;
+}
+
+.translate-floating-src-scroll {
+    max-height: 120px;
+}
+
+.translate-floating-dest-scroll {
+    max-height: 180px;
 }
 
 

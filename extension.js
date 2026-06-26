@@ -1105,7 +1105,7 @@ class FloatingTranslationWindow {
         let srcScroll = new St.ScrollView({
             hscrollbar_policy: St.PolicyType.NEVER,
             vscrollbar_policy: St.PolicyType.AUTOMATIC,
-            max_height: 120
+            style_class: 'translate-floating-src-scroll'
         });
         let srcLabel = new St.Label({
             text: sourceText,
@@ -1126,7 +1126,7 @@ class FloatingTranslationWindow {
         let destScroll = new St.ScrollView({
             hscrollbar_policy: St.PolicyType.NEVER,
             vscrollbar_policy: St.PolicyType.AUTOMATIC,
-            max_height: 180
+            style_class: 'translate-floating-dest-scroll'
         });
         let destLabel = new St.Label({
             text: targetText,
@@ -1160,7 +1160,8 @@ class FloatingTranslationWindow {
 
         // Center on primary monitor
         let monitor = Main.layoutManager.primaryMonitor;
-        this.actor.connect('notify::allocation', () => {
+        let allocationId = this.actor.connect('notify::allocation', () => {
+            this.actor.disconnect(allocationId);
             let width = this.actor.get_width();
             let height = this.actor.get_height();
             let x = monitor.x + (monitor.width - width) / 2;
