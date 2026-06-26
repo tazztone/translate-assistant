@@ -91,3 +91,19 @@ export function formatLanguageLabel(langCode) {
     return flag ? `${flag} ${langCode}` : langCode;
 }
 
+/**
+ * Extracts the human-readable language name from GSchema enum description
+ * (e.g. "English American (EN-US)" -> "English American")
+ * @param {string} description - The description from preferences
+ * @returns {string} The language name
+ */
+export function parseLanguageName(description) {
+    if (!description) return "";
+    const idx = description.indexOf('(');
+    if (idx !== -1) {
+        return description.substring(0, idx).trim();
+    }
+    return description;
+}
+
+

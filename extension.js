@@ -33,7 +33,7 @@ import Shell from "gi://Shell";
 import Soup from "gi://Soup?version=3.0";
 
 import { Extension, gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
-import { parseCountryCode, buildRequestQuery, formatLanguageLabel } from "./translation-helper.js";
+import { parseCountryCode, buildRequestQuery, formatLanguageLabel, parseLanguageName, getFlagEmoji } from "./translation-helper.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
@@ -213,8 +213,18 @@ var TranslateAssistant = GObject.registerClass(
             this._addTooltip(this.settingsMenuItem, _("Open extension preferences"));
 
             this.menu.connect('open-state-changed', (menu, isOpen) => {
-                if (!isOpen && this._tooltips) {
-                    this._tooltips.forEach(t => t._hide());
+                if (this._tooltips) {
+                    this._tooltips.forEach(t => t.hide());
+                }
+                if (!isOpen) {
+                    this._toggleLanguageSelector(true, false);
+                } else {
+                    if (this.autoPasteSwitch.state === true) {
+                        let clipboardText = Clipboard.get_text(CLIPBOARD_TYPE);
+                        if (clipboardText) {
+                            this.inputEntry.get_clutter_text().set_text(clipboardText);
+                        }
+                    }
                 }
             });
         }
@@ -489,6 +499,7 @@ var TranslateAssistant = GObject.registerClass(
                 vertical: true,
                 style_class: 'translate-container'
             });
+            this.translationBlockContainer = container;
 
             // 1. Language Row
             let langRow = new St.BoxLayout({
@@ -496,10 +507,14 @@ var TranslateAssistant = GObject.registerClass(
                 style_class: 'translate-lang-row',
                 x_align: Clutter.ActorAlign.CENTER
             });
-             this.sourceLabel = new St.Label({
-                text: formatLanguageLabel(this._source_lang),
+             this.sourceLabel = new St.Button({
+                label: formatLanguageLabel(this._source_lang),
                 style_class: 'translate-lang-label',
                 reactive: true
+            });
+            this.sourceLabel.connect('clicked', () => {
+                const isVisible = !!this.sourceSelector;
+                this._toggleLanguageSelector(true, !isVisible);
             });
             this.swapBtn = new St.Button({
                 label: '⇄',
@@ -507,11 +522,14 @@ var TranslateAssistant = GObject.registerClass(
                 reactive: true
             });
             this.swapBtn.connect('clicked', () => {
+                if (this.sourceSelector || this.targetSelector) {
+                    this._toggleLanguageSelector(true, false);
+                }
                 const oldTargetLang = this._target_lang;
                 this._target_lang = this._source_lang;
                 this._source_lang = oldTargetLang;
-                this.sourceLabel.text = formatLanguageLabel(this._source_lang);
-                this.targetLabel.text = formatLanguageLabel(this._target_lang);
+                this.sourceLabel.label = formatLanguageLabel(this._source_lang);
+                this.targetLabel.label = formatLanguageLabel(this._target_lang);
                 
                 // Swap text in entry boxes
                 let inText = this.inputEntry.get_clutter_text().get_text();
@@ -519,10 +537,14 @@ var TranslateAssistant = GObject.registerClass(
                 this.inputEntry.get_clutter_text().set_text(outText);
                 this.outputEntry.get_clutter_text().set_text(inText);
             });
-            this.targetLabel = new St.Label({
-                text: formatLanguageLabel(this._target_lang),
+            this.targetLabel = new St.Button({
+                label: formatLanguageLabel(this._target_lang),
                 style_class: 'translate-lang-label',
                 reactive: true
+            });
+            this.targetLabel.connect('clicked', () => {
+                const isVisible = !!this.targetSelector;
+                this._toggleLanguageSelector(false, !isVisible);
             });
             langRow.add_child(this.sourceLabel);
             langRow.add_child(this.swapBtn);
@@ -534,6 +556,7 @@ var TranslateAssistant = GObject.registerClass(
                 vertical: true,
                 style_class: 'translate-entry-wrapper'
             });
+            this.inputWrapper = inputWrapper;
             this.inputEntry = new St.Entry({
                 name: 'inputEntry',
                 style_class: 'translate-entry',
@@ -612,6 +635,7 @@ var TranslateAssistant = GObject.registerClass(
                 style_class: 'translate-middle-row',
                 x_align: Clutter.ActorAlign.CENTER
             });
+            this.middleRow = middleRow;
             this.translateBtn = new St.Button({
                 label: _("Translate"),
                 style_class: 'translate-submit-btn',
@@ -640,6 +664,7 @@ var TranslateAssistant = GObject.registerClass(
                 vertical: true,
                 style_class: 'translate-entry-wrapper'
             });
+            this.outputWrapper = outputWrapper;
             this.outputEntry = new St.Entry({
                 name: 'outputEntry',
                 style_class: 'translate-entry read-only',
@@ -702,10 +727,10 @@ var TranslateAssistant = GObject.registerClass(
                 return this.translateBtn.label === _("Cancel") ? _("Cancel translation") : _("Translate text");
             });
             this._addTooltip(this.sourceLabel, () => {
-                return _("Source language: ") + (this.sourceLabel.text || _("Auto"));
+                return _("Source language: ") + (this.sourceLabel.label || _("Auto"));
             });
             this._addTooltip(this.targetLabel, () => {
-                return _("Target language: ") + (this.targetLabel.text || "");
+                return _("Target language: ") + (this.targetLabel.label || "");
             });
 
             let menuItem = new PopupMenu.PopupBaseMenuItem({
@@ -758,15 +783,118 @@ var TranslateAssistant = GObject.registerClass(
         _settingsChanged() {
             this._loadPreferences();
             if (this.sourceLabel) {
-                this.sourceLabel.text = formatLanguageLabel(this._source_lang);
+                this.sourceLabel.label = formatLanguageLabel(this._source_lang);
             }
             if (this.targetLabel) {
-                this.targetLabel.text = formatLanguageLabel(this._target_lang);
+                this.targetLabel.label = formatLanguageLabel(this._target_lang);
+            }
+        }
+
+        _toggleLanguageSelector(isSource, show) {
+            if (show) {
+                // Hide input, middle row, and output
+                this.inputWrapper.visible = false;
+                this.middleRow.visible = false;
+                this.outputWrapper.visible = false;
+                
+                // Hide other selectors
+                if (this.sourceSelector) {
+                    this.sourceSelector.destroy();
+                    this.sourceSelector = null;
+                }
+                if (this.targetSelector) {
+                    this.targetSelector.destroy();
+                    this.targetSelector = null;
+                }
+                
+                // Create new selector scroll view
+                const keyName = isSource ? 'source-lang' : 'target-lang';
+                const key = this._settings.settings_schema.get_key(keyName);
+                const enums = key.get_range().deep_unpack()[1].deep_unpack();
+                const selectedIndex = this._settings.get_enum(keyName);
+                
+                let selectorScroll = new St.ScrollView({
+                    style_class: 'translate-scroll translate-selector-scroll',
+                    hscrollbar_policy: St.PolicyType.NEVER,
+                    vscrollbar_policy: St.PolicyType.AUTOMATIC
+                });
+                
+                let scrollBox = new St.BoxLayout({
+                    vertical: true,
+                    x_expand: true,
+                    style_class: 'translate-selector-box'
+                });
+                
+                let colCount = 2;
+                let row = null;
+                enums.forEach((enumStr, index) => {
+                    if (index % colCount === 0) {
+                        row = new St.BoxLayout({
+                            vertical: false,
+                            x_expand: true,
+                            style_class: 'translate-lang-selector-row'
+                        });
+                        scrollBox.add_child(row);
+                    }
+                    
+                    const code = parseCountryCode(enumStr);
+                    const flag = getFlagEmoji(code);
+                    const name = parseLanguageName(enumStr);
+                    const buttonText = flag ? `${flag} ${name}` : name;
+                    
+                    let isSelected = (index === selectedIndex);
+                    let btn = new St.Button({
+                        label: buttonText,
+                        style_class: isSelected ? 'translate-lang-selector-btn selected' : 'translate-lang-selector-btn',
+                        x_expand: true,
+                        reactive: true
+                    });
+                    
+                    btn.connect('clicked', () => {
+                        this._settings.set_enum(keyName, index);
+                        this._toggleLanguageSelector(isSource, false);
+                        this._triggerTranslation();
+                    });
+                    
+                    row.add_child(btn);
+                });
+                
+                selectorScroll.add_child(scrollBox);
+                this.translationBlockContainer.add_child(selectorScroll);
+                
+                if (isSource) {
+                    this.sourceSelector = selectorScroll;
+                } else {
+                    this.targetSelector = selectorScroll;
+                }
+            } else {
+                // Destroy selectors
+                if (this.sourceSelector) {
+                    this.sourceSelector.destroy();
+                    this.sourceSelector = null;
+                }
+                if (this.targetSelector) {
+                    this.targetSelector.destroy();
+                    this.targetSelector = null;
+                }
+                
+                // Restore input, middle row, and output
+                this.inputWrapper.visible = true;
+                this.middleRow.visible = true;
+                this.outputWrapper.visible = true;
             }
         }
 
         destroy() {
             this._destroyed = true;
+            if (this.sourceSelector) {
+                this.sourceSelector.destroy();
+                this.sourceSelector = null;
+            }
+            if (this.targetSelector) {
+                this.targetSelector.destroy();
+                this.targetSelector = null;
+            }
             if (this._tooltips) {
                 this._tooltips.forEach(t => t.destroy());
                 this._tooltips = null;

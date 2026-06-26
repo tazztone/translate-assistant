@@ -1,5 +1,5 @@
 import assert from "assert";
-import { parseCountryCode, buildRequestQuery, getFlagEmoji, formatLanguageLabel } from "../translation-helper.js";
+import { parseCountryCode, buildRequestQuery, getFlagEmoji, formatLanguageLabel, parseLanguageName } from "../translation-helper.js";
 
 // ==========================================
 // 1. parseCountryCode Tests
@@ -54,6 +54,11 @@ assert.strictEqual(getFlagEmoji(""), "", "Empty string should return empty strin
 assert.strictEqual(formatLanguageLabel("DE"), "🇩🇪 DE", "DE should be formatted as 🇩🇪 DE");
 assert.strictEqual(formatLanguageLabel(null), "", "Null should be formatted as empty string");
 assert.strictEqual(formatLanguageLabel(""), "", "Empty string should be formatted as empty string");
+
+assert.strictEqual(parseLanguageName("English American (EN-US)"), "English American", "Should extract English American");
+assert.strictEqual(parseLanguageName("Spanish (ES)"), "Spanish", "Should extract Spanish");
+assert.strictEqual(parseLanguageName("NoParens"), "NoParens", "Should return string directly if no parentheses");
+assert.strictEqual(parseLanguageName(null), "", "Null should return empty string");
 
 console.log("✅ getFlagEmoji and formatLanguageLabel tests passed successfully!\n");
 

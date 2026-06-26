@@ -135,3 +135,62 @@
     text-align: center;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
+
+/* Language Button States */
+.translate-lang-label:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+.translate-lang-label:active {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+.translate-lang-label:focus {
+    box-shadow: none;
+    border: none;
+}
+
+/* Selector Panel Styles */
+.translate-selector-scroll {
+    min-height: 280px;
+    max-height: 420px;
+}
+
+.translate-selector-box {
+    spacing: 12px;
+    padding: 8px 0;
+}
+
+.translate-lang-selector-row {
+    spacing: 12px;
+}
+
+.translate-lang-selector-btn {
+    padding: 12px 18px;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #e0e0e0;
+    font-size: 22px;
+    transition-duration: 0.15s;
+    text-align: left;
+}
+
+.translate-lang-selector-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.translate-lang-selector-btn:active {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.translate-lang-selector-btn:focus {
+    box-shadow: none;
+    border: none;
+}
+
+.translate-lang-selector-btn.selected {
+    background-color: #3584e4;
+    color: #ffffff;
+    font-weight: bold;
+}
+
