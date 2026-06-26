@@ -298,7 +298,7 @@ export default class TranslateAssistantPreferences extends ExtensionPreferences 
 
         const homepageRow = new Adw.ActionRow({
             title: _('Project Homepage'),
-            subtitle: 'https://www.atareao.es/aplicacion/translate-assistant',
+            subtitle: 'https://github.com/tazztone/translate-assistant',
         });
         const homepageBtn = new Gtk.Button({
             icon_name: 'web-browser-symbolic',
@@ -306,14 +306,14 @@ export default class TranslateAssistantPreferences extends ExtensionPreferences 
             has_frame: false,
         });
         homepageBtn.connect('clicked', () => {
-            Gio.AppInfo.launch_default_for_uri('https://www.atareao.es/aplicacion/translate-assistant', null);
+            Gio.AppInfo.launch_default_for_uri('https://github.com/tazztone/translate-assistant', null);
         });
         homepageRow.add_suffix(homepageBtn);
         linksGroup.add(homepageRow);
 
         const coffeeRow = new Adw.ActionRow({
             title: _('Buy me a coffee'),
-            subtitle: 'https://www.buymeacoffee.com/atareao',
+            subtitle: 'https://buymeacoffee.com/tazztone',
         });
         const coffeeBtn = new Gtk.Button({
             icon_name: 'heart-symbolic',
@@ -321,7 +321,7 @@ export default class TranslateAssistantPreferences extends ExtensionPreferences 
             has_frame: false,
         });
         coffeeBtn.connect('clicked', () => {
-            Gio.AppInfo.launch_default_for_uri('https://www.buymeacoffee.com/atareao', null);
+            Gio.AppInfo.launch_default_for_uri('https://buymeacoffee.com/tazztone', null);
         });
         coffeeRow.add_suffix(coffeeBtn);
         linksGroup.add(coffeeRow);

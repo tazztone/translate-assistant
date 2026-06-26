@@ -2,14 +2,13 @@
 <!-- start project-info -->
 <!--
 project_title: Translate assistant
-github_project: https://github.com/atareao/translate-assistant
+github_project: https://github.com/tazztone/translate-assistant
 license: MIT
-icon: /datos/Sync/Programacion/gnome-shell/translate-assistant@atareao.es/icons/translate-assistant-icon.svg
-homepage: https://www.atareao.es/aplicacion/translate-assistant
+icon: icons/translate-assistant-icon.svg
+homepage: https://github.com/tazztone/translate-assistant
 license-badge: True
 contributors-badge: True
 lastcommit-badge: True
-codefactor-badge: True
 --->
 
 <!-- end project-info -->
@@ -17,19 +16,19 @@ codefactor-badge: True
 <!-- start badges -->
 
 ![License MIT](https://img.shields.io/badge/license-MIT-green)
-![Contributors](https://img.shields.io/github/contributors-anon/atareao/translate-assistant)
-![Last commit](https://img.shields.io/github/last-commit/atareao/translate-assistant)
-[![CodeFactor](https://www.codefactor.io/repository/github/atareao/translate-assistant/badge/master)](https://www.codefactor.io/repository/github/atareao/translate-assistant/overview/master)
+![Contributors](https://img.shields.io/github/contributors-anon/tazztone/translate-assistant)
+![Last commit](https://img.shields.io/github/last-commit/tazztone/translate-assistant)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-tazztone-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/tazztone)
 <!-- end badges -->
 
 <!-- start description -->
 <h1 align="center">Welcome to <span id="project_title">Translate Assistant for GNOME Shell</span> 👋</h1>
 <p>
-<a href="https://www.atareao.es/aplicacion/translate-assistant" id="homepage" rel="nofollow">
+<a href="https://github.com/tazztone/translate-assistant" id="homepage" rel="nofollow">
 <img align="right" height="128" id="icon" src="icons/translate-assistant-icon.svg" width="128"/>
 </a>
 </p>
-<h2>🏠 <a href="https://www.atareao.es/aplicacion/translate-assistant" id="homepage">Homepage</a></h2>
+<h2>🏠 <a href="https://github.com/tazztone/translate-assistant" id="homepage">Homepage</a></h2>
 <p><span id="project_title">Translate Assistant for GNOME Shell</span> is an indicator help you with translations.</p>
 
 ## ✨ Features
