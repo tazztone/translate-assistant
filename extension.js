@@ -33,7 +33,7 @@ import Shell from "gi://Shell";
 import Soup from "gi://Soup?version=3.0";
 
 import { Extension, gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
-import { parseCountryCode, buildRequestQuery } from "./translation-helper.js";
+import { parseCountryCode, buildRequestQuery, formatLanguageLabel } from "./translation-helper.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
@@ -496,8 +496,8 @@ var TranslateAssistant = GObject.registerClass(
                 style_class: 'translate-lang-row',
                 x_align: Clutter.ActorAlign.CENTER
             });
-            this.sourceLabel = new St.Label({
-                text: this._source_lang || '',
+             this.sourceLabel = new St.Label({
+                text: formatLanguageLabel(this._source_lang),
                 style_class: 'translate-lang-label',
                 reactive: true
             });
@@ -510,8 +510,8 @@ var TranslateAssistant = GObject.registerClass(
                 const oldTargetLang = this._target_lang;
                 this._target_lang = this._source_lang;
                 this._source_lang = oldTargetLang;
-                this.sourceLabel.text = this._source_lang || '';
-                this.targetLabel.text = this._target_lang || '';
+                this.sourceLabel.text = formatLanguageLabel(this._source_lang);
+                this.targetLabel.text = formatLanguageLabel(this._target_lang);
                 
                 // Swap text in entry boxes
                 let inText = this.inputEntry.get_clutter_text().get_text();
@@ -520,7 +520,7 @@ var TranslateAssistant = GObject.registerClass(
                 this.outputEntry.get_clutter_text().set_text(inText);
             });
             this.targetLabel = new St.Label({
-                text: this._target_lang || '',
+                text: formatLanguageLabel(this._target_lang),
                 style_class: 'translate-lang-label',
                 reactive: true
             });
@@ -758,10 +758,10 @@ var TranslateAssistant = GObject.registerClass(
         _settingsChanged() {
             this._loadPreferences();
             if (this.sourceLabel) {
-                this.sourceLabel.text = this._source_lang || '';
+                this.sourceLabel.text = formatLanguageLabel(this._source_lang);
             }
             if (this.targetLabel) {
-                this.targetLabel.text = this._target_lang || '';
+                this.targetLabel.text = formatLanguageLabel(this._target_lang);
             }
         }
 

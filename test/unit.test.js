@@ -1,5 +1,5 @@
 import assert from "assert";
-import { parseCountryCode, buildRequestQuery } from "../translation-helper.js";
+import { parseCountryCode, buildRequestQuery, getFlagEmoji, formatLanguageLabel } from "../translation-helper.js";
 
 // ==========================================
 // 1. parseCountryCode Tests
@@ -37,4 +37,25 @@ assert.strictEqual(
 
 console.log("✅ buildRequestQuery tests passed successfully!\n");
 
+// ==========================================
+// 3. getFlagEmoji and formatLanguageLabel Tests
+// ==========================================
+console.log("⏳ Running getFlagEmoji and formatLanguageLabel tests...");
+
+assert.strictEqual(getFlagEmoji("ES"), "🇪🇸", "ES should map to Spain flag");
+assert.strictEqual(getFlagEmoji("EN"), "🇬🇧", "EN should map to UK flag");
+assert.strictEqual(getFlagEmoji("EN-US"), "🇺🇸", "EN-US should map to US flag");
+assert.strictEqual(getFlagEmoji("PT-BR"), "🇧🇷", "PT-BR should map to Brazil flag");
+assert.strictEqual(getFlagEmoji("ET"), "🇪🇪", "ET should map to Estonia flag");
+assert.strictEqual(getFlagEmoji("ZH"), "🇨🇳", "ZH should map to China flag");
+assert.strictEqual(getFlagEmoji(null), "", "Null should return empty string");
+assert.strictEqual(getFlagEmoji(""), "", "Empty string should return empty string");
+
+assert.strictEqual(formatLanguageLabel("DE"), "🇩🇪 DE", "DE should be formatted as 🇩🇪 DE");
+assert.strictEqual(formatLanguageLabel(null), "", "Null should be formatted as empty string");
+assert.strictEqual(formatLanguageLabel(""), "", "Empty string should be formatted as empty string");
+
+console.log("✅ getFlagEmoji and formatLanguageLabel tests passed successfully!\n");
+
 console.log("🎉 All unit tests passed successfully!");
+

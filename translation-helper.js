@@ -41,3 +41,53 @@ export function buildRequestQuery(params) {
         .filter(part => part !== '')
         .join('&');
 }
+
+/**
+ * Converts a 2-letter country code or language code to a regional flag emoji
+ * @param {string} countryCode - The ISO country or language code (e.g. 'ES', 'PT-BR')
+ * @returns {string} The regional flag emoji or empty string
+ */
+export function getFlagEmoji(countryCode) {
+    if (!countryCode) return "";
+    let code = countryCode.toUpperCase();
+    if (code.includes('-')) {
+        code = code.split('-')[1];
+    }
+    
+    // Custom language-to-country overrides
+    const overrides = {
+        'EN': 'GB',
+        'JA': 'JP',
+        'ZH': 'CN',
+        'CS': 'CZ',
+        'EL': 'GR',
+        'SV': 'SE',
+        'DA': 'DK',
+        'SL': 'SI',
+        'ET': 'EE'
+    };
+    
+    if (overrides[code]) {
+        code = overrides[code];
+    }
+    
+    if (code.length === 2) {
+        return String.fromCodePoint(
+            code.codePointAt(0) - 65 + 0x1F1E6,
+            code.codePointAt(1) - 65 + 0x1F1E6
+        );
+    }
+    return "";
+}
+
+/**
+ * Formats a language code with its flag emoji.
+ * @param {string} langCode - The ISO country/language code
+ * @returns {string} The formatted label text
+ */
+export function formatLanguageLabel(langCode) {
+    if (!langCode) return "";
+    const flag = getFlagEmoji(langCode);
+    return flag ? `${flag} ${langCode}` : langCode;
+}
+
