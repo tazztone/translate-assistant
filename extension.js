@@ -285,32 +285,38 @@ var TranslateAssistant = GObject.registerClass(
         }
 
         _onSelectionChange(_a, selectionType, _b) {
-            if (selectionType === Meta.SelectionType.SELECTION_CLIPBOARD) {
-                if (this._isInternalCopy) {
-                    this._isInternalCopy = false;
-                    if (this._internalCopyTimeoutId) {
-                        GLib.Source.remove(this._internalCopyTimeoutId);
-                        this._internalCopyTimeoutId = null;
-                    }
-                    return;
+            if (selectionType !== Meta.SelectionType.SELECTION_CLIPBOARD) return;
+            if (this._isInternalCopy) {
+                this._isInternalCopy = false;
+                if (this._internalCopyTimeoutId) {
+                    GLib.Source.remove(this._internalCopyTimeoutId);
+                    this._internalCopyTimeoutId = null;
                 }
-                let now = GLib.get_monotonic_time();
-                let diff = this._lastSelectionTime ? now - this._lastSelectionTime : -1;
-                if (this._lastSelectionTime) {
-                    if (diff >= 0 && diff < 50000) {
+                return;
+            }
+
+            let now = GLib.get_monotonic_time();
+
+            Clipboard.get_text(CLIPBOARD_TYPE, (_, text) => {
+                if (!text || text.trim() === '') return;
+
+                if (this._lastClipboardTime && this._lastClipboardText !== null) {
+                    let diff = now - this._lastClipboardTime;
+                    // Trigger only if same content AND within 50ms–2s window.
+                    // Identical content means the user pressed Ctrl+C on the same selection.
+                    // Clipboard managers (e.g. GSConnect) always change the content slightly,
+                    // so they won't accidentally trigger the floating window.
+                    if (diff >= 50000 && diff < 2000000 && text === this._lastClipboardText) {
+                        this._lastClipboardText = null; // consume — triple-C won't re-trigger
+                        this._triggerFloatingTranslation(text);
                         return;
                     }
-                    if (diff >= 0 && diff < 2000000) {
-                        Clipboard.get_text(CLIPBOARD_TYPE, (_, fromText) => {
-                            if (fromText && fromText.trim() !== "") {
-                                this._triggerFloatingTranslation(fromText);
-                            }
-                        });
-                    }
                 }
-                this._lastSelectionTime = now;
+
+                this._lastClipboardTime = now;
+                this._lastClipboardText = text;
                 this._translateIfAutoPaste();
-            }
+            });
         }
 
         _setupTimeout(reiterate) {

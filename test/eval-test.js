@@ -357,7 +357,13 @@ global.testRunnerPromise = (async () => {
 
         try {
             // Reset state so startup events don't bleed into this test
-            indicator._lastSelectionTime = null;
+            indicator._lastClipboardTime = null;
+            indicator._lastClipboardText = null;
+            if (indicator._internalCopyTimeoutId) {
+                GLib.Source.remove(indicator._internalCopyTimeoutId);
+                indicator._internalCopyTimeoutId = null;
+            }
+            indicator._isInternalCopy = false;
             if (indicator._floatingWindow) {
                 indicator._floatingWindow.destroy();
                 indicator._floatingWindow = null;
@@ -367,7 +373,7 @@ global.testRunnerPromise = (async () => {
             mockTime = 1000000;
             mockClipboardText = "Double Copy Test input text";
             indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null);
-            
+
             // Check that the floating window is NOT created yet
             if (indicator._floatingWindow) {
                 GLib.get_monotonic_time = originalGetMonotonicTime;
@@ -377,20 +383,19 @@ global.testRunnerPromise = (async () => {
                 return { success: false, error: "Floating window was created on a single copy!" };
             }
 
-            // Simulate spurious copy signal (10ms monotonic time delta)
+            // Simulate spurious duplicate signal <50ms — same content, must NOT trigger
             mockTime = 1010000;
             indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null);
 
-            // Verify that independent translation was NOT triggered by the spurious signal
             if (independentTranslationCallback) {
                 GLib.get_monotonic_time = originalGetMonotonicTime;
                 Clipboard.get_text = originalClipboardGetText;
                 Clipboard.set_text = originalClipboardSetText;
                 indicator._translateTextIndependent = originalTranslateTextIndependent;
-                return { success: false, error: "Spurious repeat event (<50ms) triggered translation!" };
+                return { success: false, error: "Spurious duplicate (<50ms) triggered translation!" };
             }
 
-            // Simulate second copy (200ms monotonic time delta from the first press)
+            // Second intentional copy — same content, 200ms later — must trigger
             mockTime = 1200000;
             indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null);
 
@@ -478,12 +483,23 @@ global.testRunnerPromise = (async () => {
                     autoCopiedText = text;
                 };
 
-                // Trigger double copy flow again
+                // Reset state for clean double-copy sequence
+                indicator._lastClipboardTime = null;
+                indicator._lastClipboardText = null;
+                if (indicator._internalCopyTimeoutId) {
+                    GLib.Source.remove(indicator._internalCopyTimeoutId);
+                    indicator._internalCopyTimeoutId = null;
+                }
+                indicator._isInternalCopy = false;
+                independentTranslationCallback = null;
+                independentTranslationText = "";
+
+                // Trigger double copy flow
                 mockClipboardText = "Auto Copy Test input text";
                 mockTime = 2000000;
                 indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null); // 1st
                 mockTime = 2200000;
-                indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null); // 2nd
+                indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null); // 2nd (same text → triggers)
 
                 if (!independentTranslationCallback) {
                     Clipboard.get_text = originalClipboardGetText;
