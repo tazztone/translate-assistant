@@ -135,11 +135,21 @@
             <summary>Auto copy</summary>
             <description>Copy automatically the content of the output box in the clipboard</description>
         </key>
-         <key name="floating-auto-copy" type="b">
+          <key name="floating-auto-copy" type="b">
+             <default>false</default>
+             <summary>Floating Auto Copy</summary>
+             <description>Copy automatically the content of the floating translation window to the clipboard</description>
+         </key>
+         <key name="floating-background-mode" type="b">
             <default>false</default>
-            <summary>Floating Auto Copy</summary>
-            <description>Copy automatically the content of the floating translation window to the clipboard</description>
-        </key>
+            <summary>Background Mode</summary>
+            <description>Translate in background on double-copy instead of showing the floating window</description>
+         </key>
+         <key name="floating-background-toast" type="b">
+            <default>true</default>
+            <summary>Show Notification in Background Mode</summary>
+            <description>Display a notification when background translation finishes</description>
+         </key>
          <key name="auto-translate" type="b">
             <default>false</default>
             <summary>Auto translate</summary>

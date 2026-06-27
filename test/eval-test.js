@@ -364,6 +364,9 @@ global.testRunnerPromise = (async () => {
                 indicator._internalCopyTimeoutId = null;
             }
             indicator._isInternalCopy = false;
+            indicator._settings.set_boolean('floating-auto-copy', false);
+            indicator._settings.set_boolean('floating-background-mode', false);
+            indicator._settings.set_boolean('floating-background-toast', true);
             if (indicator._floatingWindow) {
                 indicator._floatingWindow.destroy();
                 indicator._floatingWindow = null;
@@ -526,6 +529,170 @@ global.testRunnerPromise = (async () => {
                 }
             } finally {
                 indicator._settings.set_boolean('floating-auto-copy', originalAutoCopyState);
+            }
+
+            // Test 8c: Double-copy in background mode with toast enabled
+            const originalBgMode = indicator._settings.get_boolean('floating-background-mode');
+            const originalBgToast = indicator._settings.get_boolean('floating-background-toast');
+            indicator._settings.set_boolean('floating-background-mode', true);
+            indicator._settings.set_boolean('floating-background-toast', true);
+
+            const MessageTray = await import("resource:///org/gnome/shell/ui/messageTray.js");
+            const originalAddNotification = MessageTray.Source.prototype.addNotification;
+            let notifyTitle = null;
+            let notifyBody = null;
+            let notifyCalled = false;
+            MessageTray.Source.prototype.addNotification = function(notification) {
+                notifyCalled = true;
+                notifyTitle = notification.title;
+                notifyBody = notification.body;
+            };
+
+            try {
+                let bgCopiedText = "";
+                Clipboard.set_text = function(type, text) {
+                    bgCopiedText = text;
+                };
+
+                // Reset state
+                indicator._lastClipboardTime = null;
+                indicator._lastClipboardText = null;
+                if (indicator._internalCopyTimeoutId) {
+                    GLib.Source.remove(indicator._internalCopyTimeoutId);
+                    indicator._internalCopyTimeoutId = null;
+                }
+                indicator._isInternalCopy = false;
+                independentTranslationCallback = null;
+                independentTranslationText = "";
+
+                // Trigger double copy
+                mockClipboardText = "Bg Mode Toast input text";
+                mockTime = 3000000;
+                indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null); // 1st
+                mockTime = 3200000;
+                indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null); // 2nd
+
+                if (!independentTranslationCallback) {
+                    Clipboard.get_text = originalClipboardGetText;
+                    Clipboard.set_text = originalClipboardSetText;
+                    indicator._translateTextIndependent = originalTranslateTextIndependent;
+                    MessageTray.Source.prototype.addNotification = originalAddNotification;
+                    return { success: false, error: "Bg Mode Toast test did not trigger translation callback!" };
+                }
+
+                // Simulate translation completing
+                independentTranslationCallback("Bg Mode Toast translated text");
+
+                // Verify that:
+                // 1. Floating window was NOT created
+                if (indicator._floatingWindow) {
+                    Clipboard.get_text = originalClipboardGetText;
+                    Clipboard.set_text = originalClipboardSetText;
+                    indicator._translateTextIndependent = originalTranslateTextIndependent;
+                    MessageTray.Source.prototype.addNotification = originalAddNotification;
+                    return { success: false, error: "Floating window was created in background mode!" };
+                }
+
+                // 2. Translated text was copied to clipboard
+                if (bgCopiedText !== "Bg Mode Toast translated text") {
+                    Clipboard.get_text = originalClipboardGetText;
+                    Clipboard.set_text = originalClipboardSetText;
+                    indicator._translateTextIndependent = originalTranslateTextIndependent;
+                    MessageTray.Source.prototype.addNotification = originalAddNotification;
+                    return { success: false, error: "Bg Mode Toast test failed to copy translation to clipboard! Got: " + bgCopiedText };
+                }
+
+                // 3. Notification was shown
+                if (!notifyCalled || !notifyTitle || notifyBody !== "Bg Mode Toast input text → Bg Mode Toast translated text") {
+                    Clipboard.get_text = originalClipboardGetText;
+                    Clipboard.set_text = originalClipboardSetText;
+                    indicator._translateTextIndependent = originalTranslateTextIndependent;
+                    MessageTray.Source.prototype.addNotification = originalAddNotification;
+                    return { success: false, error: "Bg Mode Toast notification not shown or content incorrect! Got: " + notifyBody };
+                }
+            } finally {
+                MessageTray.Source.prototype.addNotification = originalAddNotification;
+                indicator._settings.set_boolean('floating-background-mode', originalBgMode);
+                indicator._settings.set_boolean('floating-background-toast', originalBgToast);
+            }
+
+            // Test 8d: Double-copy in background mode with toast disabled
+            const originalBgModeD = indicator._settings.get_boolean('floating-background-mode');
+            const originalBgToastD = indicator._settings.get_boolean('floating-background-toast');
+            indicator._settings.set_boolean('floating-background-mode', true);
+            indicator._settings.set_boolean('floating-background-toast', false);
+
+            let notifyCalledD = false;
+            MessageTray.Source.prototype.addNotification = function(notification) {
+                notifyCalledD = true;
+            };
+
+            try {
+                let bgCopiedText = "";
+                Clipboard.set_text = function(type, text) {
+                    bgCopiedText = text;
+                };
+
+                // Reset state
+                indicator._lastClipboardTime = null;
+                indicator._lastClipboardText = null;
+                if (indicator._internalCopyTimeoutId) {
+                    GLib.Source.remove(indicator._internalCopyTimeoutId);
+                    indicator._internalCopyTimeoutId = null;
+                }
+                indicator._isInternalCopy = false;
+                independentTranslationCallback = null;
+                independentTranslationText = "";
+
+                // Trigger double copy
+                mockClipboardText = "Bg Mode No Toast input text";
+                mockTime = 4000000;
+                indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null); // 1st
+                mockTime = 4200000;
+                indicator._onSelectionChange(null, Meta.SelectionType.SELECTION_CLIPBOARD, null); // 2nd
+
+                if (!independentTranslationCallback) {
+                    Clipboard.get_text = originalClipboardGetText;
+                    Clipboard.set_text = originalClipboardSetText;
+                    indicator._translateTextIndependent = originalTranslateTextIndependent;
+                    MessageTray.Source.prototype.addNotification = originalAddNotification;
+                    return { success: false, error: "Bg Mode No Toast test did not trigger translation callback!" };
+                }
+
+                // Simulate translation completing
+                independentTranslationCallback("Bg Mode No Toast translated text");
+
+                // Verify that:
+                // 1. Floating window was NOT created
+                if (indicator._floatingWindow) {
+                    Clipboard.get_text = originalClipboardGetText;
+                    Clipboard.set_text = originalClipboardSetText;
+                    indicator._translateTextIndependent = originalTranslateTextIndependent;
+                    MessageTray.Source.prototype.addNotification = originalAddNotification;
+                    return { success: false, error: "Floating window was created in background mode (no toast)!" };
+                }
+
+                // 2. Translated text was copied to clipboard
+                if (bgCopiedText !== "Bg Mode No Toast translated text") {
+                    Clipboard.get_text = originalClipboardGetText;
+                    Clipboard.set_text = originalClipboardSetText;
+                    indicator._translateTextIndependent = originalTranslateTextIndependent;
+                    MessageTray.Source.prototype.addNotification = originalAddNotification;
+                    return { success: false, error: "Bg Mode No Toast test failed to copy translation! Got: " + bgCopiedText };
+                }
+
+                // 3. Notification was NOT shown
+                if (notifyCalledD) {
+                    Clipboard.get_text = originalClipboardGetText;
+                    Clipboard.set_text = originalClipboardSetText;
+                    indicator._translateTextIndependent = originalTranslateTextIndependent;
+                    MessageTray.Source.prototype.addNotification = originalAddNotification;
+                    return { success: false, error: "Bg Mode notification was shown even though toast option is disabled!" };
+                }
+            } finally {
+                MessageTray.Source.prototype.addNotification = originalAddNotification;
+                indicator._settings.set_boolean('floating-background-mode', originalBgModeD);
+                indicator._settings.set_boolean('floating-background-toast', originalBgToastD);
             }
 
         } catch (e) {

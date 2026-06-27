@@ -560,24 +560,35 @@ var TranslateAssistant = GObject.registerClass(
                 this._floatingWindow.destroy();
                 this._floatingWindow = null;
             }
+
+            let isBackground = this._settings.get_boolean('floating-background-mode');
+
             this._translateTextIndependent(fromText, (toText) => {
                 if (toText && toText.trim() !== "") {
                     if (this._destroyed) return;
-                    this._floatingWindow = new FloatingTranslationWindow(
-                        fromText,
-                        toText,
-                        this._source_lang,
-                        this._target_lang,
-                        () => {
-                            this._floatingWindow = null;
-                        },
-                        (text) => {
-                            this._copyToClipboard(text);
-                        },
-                        this._settings
-                    );
-                    if (this._settings.get_boolean('floating-auto-copy') === true) {
+
+                    if (isBackground) {
                         this._copyToClipboard(toText);
+                        if (this._settings.get_boolean('floating-background-toast')) {
+                            Main.notify(_("Translated"), `${fromText} → ${toText}`);
+                        }
+                    } else {
+                        this._floatingWindow = new FloatingTranslationWindow(
+                            fromText,
+                            toText,
+                            this._source_lang,
+                            this._target_lang,
+                            () => {
+                                this._floatingWindow = null;
+                            },
+                            (text) => {
+                                this._copyToClipboard(text);
+                            },
+                            this._settings
+                        );
+                        if (this._settings.get_boolean('floating-auto-copy') === true) {
+                            this._copyToClipboard(toText);
+                        }
                     }
                 }
             });

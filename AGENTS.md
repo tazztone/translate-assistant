@@ -26,3 +26,7 @@
 - No `URLSearchParams`, no `fetch`, no Node.js globals — use `Soup.Session` + `GLib.Bytes`.
 - Code runs as ESM (`"type": "module"` in metadata); use `import`/`export`, not `require`.
 - Compile schemas after editing `.gschema.xml`: `glib-compile-schemas schemas/`
+- **DO NOT** load ESModules via legacy `imports` (e.g. `imports.ui.main` throws SyntaxError in GNOME 45+). Use static `import` or dynamic `await import()`.
+- **DO NOT** reassign ESModule exports directly (e.g. `Main.notify = ...` throws TypeError). Mock system behaviors by monkeypatching mutable prototypes instead (e.g., `MessageTray.Source.prototype.addNotification`).
+- Modern system notifications in GNOME 45+ are dispatched via `source.addNotification(notification)`, not `showNotification(notification)`.
+- Always reset GSettings keys at the start of integration tests to prevent state leakage from persisting in the user's `dconf` store across runs.

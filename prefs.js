@@ -27,6 +27,7 @@ import Adw from "gi://Adw";
 import Gio from "gi://Gio";
 import Gdk from "gi://Gdk?version=4.0";
 import GLib from "gi://GLib";
+import GObject from "gi://GObject";
 import { ExtensionPreferences, gettext as _ } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
 export default class TranslateAssistantPreferences extends ExtensionPreferences {
@@ -203,6 +204,22 @@ export default class TranslateAssistantPreferences extends ExtensionPreferences 
         });
         settings.bind('floating-auto-copy', floatingAutoCopyRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         autoGroup.add(floatingAutoCopyRow);
+
+        const backgroundModeRow = new Adw.SwitchRow({
+            title: _('Double-copy Background Mode'),
+            subtitle: _('Translate in background on double-copy instead of showing the floating window'),
+        });
+        settings.bind('floating-background-mode', backgroundModeRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        autoGroup.add(backgroundModeRow);
+
+        const backgroundToastRow = new Adw.SwitchRow({
+            title: _('Show Notification in Background Mode'),
+            subtitle: _('Display a notification when background translation finishes'),
+        });
+        settings.bind('floating-background-toast', backgroundToastRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        autoGroup.add(backgroundToastRow);
+
+        backgroundModeRow.bind_property('active', backgroundToastRow, 'sensitive', GObject.BindingFlags.DEFAULT | GObject.BindingFlags.SYNC_CREATE);
 
 
         // ----------------- STYLE & SYSTEM PAGE -----------------
