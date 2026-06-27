@@ -797,6 +797,8 @@ var TranslateAssistant = GObject.registerClass(
             });
             this.inputEntry.x_expand = true;
             this.inputEntry.y_expand = true;
+            this.inputEntry.x_align = Clutter.ActorAlign.FILL;
+            this.inputEntry.y_align = Clutter.ActorAlign.FILL;
             inputScrollBox.add_child(this.inputEntry);
             inputScroll.add_child(inputScrollBox);
             inputWrapper.add_child(inputScroll);
@@ -906,6 +908,8 @@ var TranslateAssistant = GObject.registerClass(
             });
             this.outputEntry.x_expand = true;
             this.outputEntry.y_expand = true;
+            this.outputEntry.x_align = Clutter.ActorAlign.FILL;
+            this.outputEntry.y_align = Clutter.ActorAlign.FILL;
             outputScrollBox.add_child(this.outputEntry);
             outputScroll.add_child(outputScrollBox);
             outputWrapper.add_child(outputScroll);
