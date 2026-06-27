@@ -356,6 +356,13 @@ global.testRunnerPromise = (async () => {
         };
 
         try {
+            // Reset state so startup events don't bleed into this test
+            indicator._lastSelectionTime = null;
+            if (indicator._floatingWindow) {
+                indicator._floatingWindow.destroy();
+                indicator._floatingWindow = null;
+            }
+
             // First copy
             mockTime = 1000000;
             mockClipboardText = "Double Copy Test input text";

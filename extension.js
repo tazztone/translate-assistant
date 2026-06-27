@@ -132,6 +132,8 @@ class Tooltip {
             this._destroyId = null;
         }
     }
+
+    hide() { this._hide(); }
 }
 
 var TranslateAssistant = GObject.registerClass(
@@ -220,17 +222,23 @@ var TranslateAssistant = GObject.registerClass(
 
             this.menu.connect('open-state-changed', (menu, isOpen) => {
                 if (this._tooltips) {
-                    this._tooltips.forEach(t => t.hide());
+                    this._tooltips.forEach(t => t._hide());
                 }
                 if (!isOpen) {
                     this._toggleLanguageSelector(true, false);
                 } else {
                     if (this.autoPasteSwitch.state === true) {
-                        let clipboardText = Clipboard.get_text(CLIPBOARD_TYPE);
-                        if (clipboardText) {
-                            this.inputEntry.get_clutter_text().set_text(clipboardText);
-                        }
+                        Clipboard.get_text(CLIPBOARD_TYPE, (_, clipboardText) => {
+                            if (clipboardText) {
+                                this.inputEntry.get_clutter_text().set_text(clipboardText);
+                            }
+                        });
                     }
+                    // Give keyboard focus to the input box so the user can type immediately
+                    GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                        global.stage.set_key_focus(this.inputEntry.get_clutter_text());
+                        return GLib.SOURCE_REMOVE;
+                    });
                 }
             });
         }
@@ -287,12 +295,12 @@ var TranslateAssistant = GObject.registerClass(
                     return;
                 }
                 let now = GLib.get_monotonic_time();
+                let diff = this._lastSelectionTime ? now - this._lastSelectionTime : -1;
                 if (this._lastSelectionTime) {
-                    let diff = now - this._lastSelectionTime;
                     if (diff >= 0 && diff < 50000) {
                         return;
                     }
-                    if (diff >= 0 && diff < 500000) {
+                    if (diff >= 0 && diff < 2000000) {
                         Clipboard.get_text(CLIPBOARD_TYPE, (_, fromText) => {
                             if (fromText && fromText.trim() !== "") {
                                 this._triggerFloatingTranslation(fromText);
@@ -802,6 +810,11 @@ var TranslateAssistant = GObject.registerClass(
             this.inputEntry.y_expand = true;
             this.inputEntry.x_align = Clutter.ActorAlign.FILL;
             this.inputEntry.y_align = Clutter.ActorAlign.FILL;
+            // Clicking anywhere in the entry grabs keyboard focus
+            this.inputEntry.connect('button-press-event', () => {
+                global.stage.set_key_focus(this.inputEntry.get_clutter_text());
+                return Clutter.EVENT_PROPAGATE;
+            });
             inputScrollBox.add_child(this.inputEntry);
             inputScroll.add_child(inputScrollBox);
             inputWrapper.add_child(inputScroll);
