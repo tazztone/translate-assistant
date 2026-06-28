@@ -27,7 +27,9 @@ lastcommit-badge: True
 <img align="right" height="128" id="icon" src="icons/fast-translate-icon.svg" width="128"/>
 </a>
 </p>
-<h2>🏠 <a href="https://github.com/tazztone/fast-translate" id="homepage">Homepage</a></h2>
+
+> [!NOTE]
+> This project is a modernized fork of the original [translate-assistant](https://github.com/atareao/translate-assistant) extension by [Lorenzo Carbonell (atareao)](https://github.com/atareao).
 
 <span id="project_title">Fast Translate for GNOME Shell</span> is a GNOME Shell extension that brings **Google Translate and DeepL-powered translation** directly into your desktop — translate text from a panel popup or trigger instant clipboard translation with a double-copy shortcut.
 
