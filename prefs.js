@@ -125,13 +125,13 @@ export default class FastTranslatePreferences extends ExtensionPreferences {
         // Group 2: API Configuration
         const apiGroup = new Adw.PreferencesGroup({
             title: _('DeepL Translation API Configuration'),
+            description: _('Configure the DeepL API endpoint URL and your private authentication key'),
         });
         preferencesPage.add(apiGroup);
 
         // URL Entry
         const urlRow = new Adw.EntryRow({
             title: _('DeepL API URL'),
-            subtitle: _('The endpoint URL for DeepL Translation API requests'),
         });
         settings.bind('url', urlRow, 'text', Gio.SettingsBindFlags.DEFAULT);
         apiGroup.add(urlRow);
@@ -139,7 +139,6 @@ export default class FastTranslatePreferences extends ExtensionPreferences {
         // API Key Entry
         const apikeyRow = new Adw.EntryRow({
             title: _('API Key'),
-            subtitle: _('Your private DeepL API authentication key'),
             use_markup: false,
         });
         settings.bind('apikey', apikeyRow, 'text', Gio.SettingsBindFlags.DEFAULT);
@@ -221,9 +220,9 @@ export default class FastTranslatePreferences extends ExtensionPreferences {
 
         backgroundModeRow.bind_property('active', backgroundToastRow, 'sensitive', GObject.BindingFlags.DEFAULT | GObject.BindingFlags.SYNC_CREATE);
 
-        // Group 6: System & Shortcuts Integration
+        // Group 6: System and Shortcuts Integration
         const systemGroup = new Adw.PreferencesGroup({
-            title: _('System & Shortcuts Integration'),
+            title: _('System and Shortcuts Integration'),
         });
         preferencesPage.add(systemGroup);
 
@@ -321,7 +320,7 @@ export default class FastTranslatePreferences extends ExtensionPreferences {
 
         // Links Group
         const linksGroup = new Adw.PreferencesGroup({
-            title: _('Links & Support'),
+            title: _('Links and Support'),
         });
         aboutPage.add(linksGroup);
 
