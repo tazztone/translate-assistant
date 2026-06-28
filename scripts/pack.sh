@@ -20,3 +20,14 @@ cp /tmp/fast-translate-pack/*.zip .
 rm -rf /tmp/fast-translate-pack
 
 echo "✅ Packaging complete: $(ls *.zip)"
+
+if [ -x "venv/bin/shexli" ]; then
+    echo "🔍 Running shexli static analyzer..."
+    venv/bin/shexli *.zip
+else
+    echo "⚙️ Setting up virtualenv to install shexli analyzer..."
+    python3 -m venv venv
+    venv/bin/pip install -U shexli --quiet
+    echo "🔍 Running shexli static analyzer..."
+    venv/bin/shexli *.zip
+fi
