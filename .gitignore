@@ -5,3 +5,5 @@ skills-lock.json
 schemas/gschemas.compiled
 *.shell-extension.zip
 scratch/
+venv
+.venv

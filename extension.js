@@ -136,6 +136,7 @@ class Tooltip {
     hide() { this._hide(); }
 }
 
+// Note: Internal widget signals and one-shot GLib.idle_add sources auto-cleanup on deactivation.
 var FastTranslate = GObject.registerClass(
     class FastTranslate extends PanelMenu.Button {
         _init(extension) {
